@@ -1,125 +1,261 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import styled from 'styled-components';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState } from "react";
+import axios from "axios";
+import styled from "styled-components";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import MediaUploader from "./mediaUploader";
+import MediaPreview from "./mediaPreview";
+import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 
-
-const ServiceRequestForm = ({ employeeId, onClose }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('low');
-  const [category, setCategory] = useState('');
-  const [subcategory, setSubcategory] = useState('');
-  const [item, setItem] = useState('');
+const ServiceRequestForm = () => {
+  const navigate = useNavigate();
+  const [description, setDescription] = useState("");
+  const [severity, setSeverity] = useState("");
+  const [category, setCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
+  const [item, setItem] = useState("");
+  const [attachmentId, setAttachmentId] = useState(null);
+  const [fileName, setFileName] = useState(null);
 
   const categories = {
-    Server:{
-        Windows:["Application Install / Uninstall", "Server Provisioning", "Server Decommission", "Capacity & Resources", "Configure Role / Service", "Operating System", "Patch Update", "Windows Others"],
-        Linux:["Application Install / Uninstall", "Server Provisioning", "Server Decommission", "Capacity & Resources", "Configure Role / Service", "Operating System", "Patch Update", "Linux Others"],
-        "Physical Server": ["Capacity Upgrade", "Patch Update", "Firmware Upgrade", "Operating System", "Decommission", "Physical Server Others"],
+    Server: {
+      Windows: [
+        "Application Install / Uninstall",
+        "Server Provisioning",
+        "Server Decommission",
+        "Capacity & Resources",
+        "Configure Role / Service",
+        "Operating System",
+        "Patch Update",
+        "Windows Others",
+      ],
+      Linux: [
+        "Application Install / Uninstall",
+        "Server Provisioning",
+        "Server Decommission",
+        "Capacity & Resources",
+        "Configure Role / Service",
+        "Operating System",
+        "Patch Update",
+        "Linux Others",
+      ],
+      "Physical Server": [
+        "Capacity Upgrade",
+        "Patch Update",
+        "Firmware Upgrade",
+        "Operating System",
+        "Decommission",
+        "Physical Server Others",
+      ],
     },
-    Network:{
-        Switch: ["Implement","Port Configuration", "Patch Update", "Firmware Upgrade", "Decommission", "Switch Others"],
-        Firewall: ["Implement","Configure Policy", "VPN Configuration", "Patch Update", "Firmware Upgrade", "Decommission", "Firewall Others"],
-        "Load Balancer":["Configure Policy", "Patch Update", "Firmware Upgrade", "Decommission", "Load Balancer Others"],
-        Internet: ["Internet Access", "Website Whitelisting", "Website Blacklisting", "Domain & Email Blacklist"],
+    Network: {
+      Switch: [
+        "Implement",
+        "Port Configuration",
+        "Patch Update",
+        "Firmware Upgrade",
+        "Decommission",
+        "Switch Others",
+      ],
+      Firewall: [
+        "Implement",
+        "Configure Policy",
+        "VPN Configuration",
+        "Patch Update",
+        "Firmware Upgrade",
+        "Decommission",
+        "Firewall Others",
+      ],
+      "Load Balancer": [
+        "Configure Policy",
+        "Patch Update",
+        "Firmware Upgrade",
+        "Decommission",
+        "Load Balancer Others",
+      ],
+      Internet: [
+        "Internet Access",
+        "Website Whitelisting",
+        "Website Blacklisting",
+        "Domain & Email Blacklist",
+      ],
     },
-    Storage:{
-        NAS: ["Implement", "Enhance NAS Capacity", "Allocate/Additional Storage", "Deallocate/Reduce Storage", "New Shared Storage", "Patch Update", "Firmware Upgrade", "Decommission", "Access to existing storage", "NAS Others"],
+    Storage: {
+      NAS: [
+        "Implement",
+        "Enhance NAS Capacity",
+        "Allocate/Additional Storage",
+        "Deallocate/Reduce Storage",
+        "New Shared Storage",
+        "Patch Update",
+        "Firmware Upgrade",
+        "Decommission",
+        "Access to existing storage",
+        "NAS Others",
+      ],
     },
-    Backup:{
-        Backup: ["Add/Modify New Backup", "Delete Existing Backup", "Configure Backup Application", "Configure Tape Library", "Request Additional Tapes"] ,
-        Restore:["VM Restore", "Database Restore", "Document Restore", "Restore Others"],
+    Backup: {
+      Backup: [
+        "Add/Modify New Backup",
+        "Delete Existing Backup",
+        "Configure Backup Application",
+        "Configure Tape Library",
+        "Request Additional Tapes",
+      ],
+      Restore: [
+        "VM Restore",
+        "Database Restore",
+        "Document Restore",
+        "Restore Others",
+      ],
     },
-    Helpdesk:{
-        "Desktop & Laptop": ["Desktop & Laptop Request", "Configure Desktop", "Configure Laptop", "Software Install/Uninstall", "Laptop WiFi Request", "Desktop & Laptop Others", "New Keyboard", "New Mouse", "New Dockstation", "New Monitor"],
-        Others:["Configure Printer & Scanner", "Print/Scan Documents", "Conference Room Setup", "Helpdesk Others"],
+    Helpdesk: {
+      "Desktop & Laptop": [
+        "Desktop & Laptop Request",
+        "Configure Desktop",
+        "Configure Laptop",
+        "Software Install/Uninstall",
+        "Laptop WiFi Request",
+        "Desktop & Laptop Others",
+        "New Keyboard",
+        "New Mouse",
+        "New Dockstation",
+        "New Monitor",
+      ],
+      Others: [
+        "Configure Printer & Scanner",
+        "Print/Scan Documents",
+        "Conference Room Setup",
+        "Helpdesk Others",
+      ],
     },
-    Database:{
-        Oracle:["Implement", "Database Configuration", "Performance Tuning", "Create / Modify Database", "Delete / Drop Database", "Oracle Others"],
-        SQL: ["Implement", "Database Configuration", "Performance Tuning", "Create / Modify Database", "Delete / Drop Database", "SQL Others"],
-        "Database Others": ["Database Others"],
+    Database: {
+      Oracle: [
+        "Implement",
+        "Database Configuration",
+        "Performance Tuning",
+        "Create / Modify Database",
+        "Delete / Drop Database",
+        "Oracle Others",
+      ],
+      SQL: [
+        "Implement",
+        "Database Configuration",
+        "Performance Tuning",
+        "Create / Modify Database",
+        "Delete / Drop Database",
+        "SQL Others",
+      ],
+      "Database Others": ["Database Others"],
     },
-    Applications:{
-        SAP: ["Installation", "Configure", "Application Decommissioning", "SAP Others"],
+    Applications: {
+      SAP: [
+        "Installation",
+        "Configure",
+        "Application Decommissioning",
+        "SAP Others",
+      ],
     },
-    Security:{
-        Antivirus:["Implement", "Configure", "Decommission", "Antivirus Others"],
-        "Security Other":["Security Others"],
+    Security: {
+      Antivirus: ["Implement", "Configure", "Decommission", "Antivirus Others"],
+      "Security Other": ["Security Others"],
     },
-    "ID Management":{
-        "Create/Modify": ["Domain ID", "Windows Local ID", "Email ID", "SAP ID", "Mysetu ID", "ID - Others"],
-        "Delete/Disable": ["Domain ID", "Windows Local ID", "Email ID", "SAP ID", "ID - Others"],
+    "ID Management": {
+      "Create/Modify": [
+        "Domain ID",
+        "Windows Local ID",
+        "Email ID",
+        "SAP ID",
+        "Mysetu ID",
+        "ID - Others",
+      ],
+      "Delete/Disable": [
+        "Domain ID",
+        "Windows Local ID",
+        "Email ID",
+        "SAP ID",
+        "ID - Others",
+      ],
     },
-    Telecom:{
-        Telephone: ["New Telephone Request", "Telephone Location Change", "Telephone Special Number Allocation", "Dedicated PRI number Allocation"],
-    }
-};
+    Telecom: {
+      Telephone: [
+        "New Telephone Request",
+        "Telephone Location Change",
+        "Telephone Special Number Allocation",
+        "Dedicated PRI number Allocation",
+      ],
+    },
+  };
+
   const subcategories = category ? Object.keys(categories[category]) : [];
   const items = subcategory ? categories[category][subcategory] : [];
+
+  const handleUploadSuccess = ({ attachmentId, fileName }) => {
+    setAttachmentId(attachmentId);
+    setFileName(fileName);
+    toast.success("File uploaded successfully!!");
+  };
+
+  const handleClearAttachment = () => {
+    setAttachmentId(null);
+    setFileName(null);
+  };
   const handleSubmit = () => {
-    if (!priority || !category || !subcategory|| !item) {
-            toast.error("Please fill all required fields!");  // Toast notification
-            return;
-          }
-    axios.post('/requests', {
-      employeeId,
-      type: 'service',
-      title,
-      description,
-      priority,
-      status: 'pending',
+    if (!severity || !category || !subcategory || !item) {
+      toast.error("Please fill all required fields!"); // Toast notification
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("type", "Service");
+    formData.append("description", description);
+    formData.append("severity", severity);
+    formData.append("status", "pending");
+    formData.append("category", category);
+    formData.append("subcategory", subcategory);
+    formData.append("item", item);
+
+    const payload = {
+      query: description,
+      priority: severity,
+      subCategory: subcategory,
+      item: item,
       category,
-      subcategory,
-      item
-    })
-    .then(response => {
-      toast.success("Request submitted successfully!");
-      onClose(); // Close the form after submission
-    })
-    .catch(error => console.error(error));
+      type: "Service",
+      attachmentId: attachmentId || undefined,
+    };
+
+    const token = localStorage.getItem("token");
+    axios
+      .post("http://192.168.49.160:3000/tickets/create", payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(() => {
+        toast.success("Ticket raised Successfully!!");
+
+        navigate("/raise-a-ticket");
+      })
+      .catch((error) => console.error(error));
   };
 
   return (
     <FormContainer>
       <FormTitle>Service Request Form</FormTitle>
-      <FormField>
-        <Label>Title</Label>
-        <Input
-          type="text"
-          placeholder="Enter request title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </FormField>
 
-      <FormField>
-        <Label>Description</Label>
-        <TextArea
-          placeholder="Enter request description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormField>
-
-      <FormField>
-        <Label>Priority</Label>
-        <Select value={priority} onChange={(e) => setPriority(e.target.value)}>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </Select>
-      </FormField>
-      <FormField>
-        <Label>Category</Label>
+      <FormField required={true}>
+        <Label required={true}>Category <span style={{ color: 'red' }}>*</span></Label>
         <Select
           value={category}
           onChange={(e) => {
             setCategory(e.target.value);
-            setSubcategory(''); // Reset subcategory when category changes
-            setItem(''); // Reset item when category changes
+            setSubcategory(""); // Reset subcategory when category changes
+            setItem(""); // Reset item when category changes
           }}
+          required
         >
           <option value="">Select a category</option>
           {Object.keys(categories).map((cat) => (
@@ -129,54 +265,104 @@ const ServiceRequestForm = ({ employeeId, onClose }) => {
           ))}
         </Select>
       </FormField>
+      <FormField>
+        <Label>Subcategory <span style={{ color: 'red' }}>*</span></Label>
+        <Select
+          disabled={category === ""}
+          value={subcategory}
+          onChange={(e) => {
+            setSubcategory(e.target.value);
+            setItem(""); // Reset item when subcategory changes
+          }}
+        >
+          <option value="">Select a subcategory</option>
+          {subcategories.map((subcat) => (
+            <option key={subcat} value={subcat}>
+              {subcat}
+            </option>
+          ))}
+        </Select>
+      </FormField>
 
-      {category && (
+      <FormField>
+        <Label>Item <span style={{ color: 'red' }}>*</span></Label>
+        <Select
+          disabled={subcategory === ""}
+          value={item}
+          onChange={(e) => setItem(e.target.value)}
+        >
+          <option value="">Select an item</option>
+          {items.map((it) => (
+            <option key={it} value={it}>
+              {it}
+            </option>
+          ))}
+        </Select>
+      </FormField>
+      <FormField>
+        <Label>Severity <span style={{ color: 'red' }}>*</span></Label>
+        <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+          <option value="">Select a severity</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+        </Select>
+      </FormField>
+      <FormField>
+        <Label>Description <span style={{ color: 'red' }}>*</span></Label>
+        <TextArea
+          placeholder="Enter request description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </FormField>
+      {attachmentId && (
+        <RamContainer>
+          <X color={"red"} onClick={handleClearAttachment} />
+        </RamContainer>
+      )}
+      {!attachmentId && (
         <FormField>
-          <Label>Subcategory</Label>
-          <Select
-            value={subcategory}
-            onChange={(e) => {
-              setSubcategory(e.target.value);
-              setItem(''); // Reset item when subcategory changes
+          <Label>Attach File (Optional)</Label>
+          <MediaUploader
+            onUploadSuccess={handleUploadSuccess}
+            onUploadError={(error) => {
+              toast.error("Error while uploading file");
+              console.error(error);
             }}
-          >
-            <option value="">Select a subcategory</option>
-            {subcategories.map((subcat) => (
-              <option key={subcat} value={subcat}>
-                {subcat}
-              </option>
-            ))}
-          </Select>
+            maxSizeMB={10}
+            uploadUrl="http://192.168.49.160:3000/media/upload"
+            acceptedFileTypes={[
+              "application/pdf",
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+            ]}
+            disabled={!!attachmentId}
+          />
         </FormField>
       )}
 
-      {subcategory && (
-        <FormField>
-          <Label>Item</Label>
-          <Select
-            value={item}
-            onChange={(e) => setItem(e.target.value)}
-          >
-            <option value="">Select an item</option>
-            {items.map((it) => (
-              <option key={it} value={it}>
-                {it}
-              </option>
-            ))}
-          </Select>
-        </FormField>
+      {attachmentId && (
+        <MediaPreviewWrapper>
+          <MediaPreview mediaId={attachmentId} />
+        </MediaPreviewWrapper>
       )}
-
       <ButtonContainer>
         <Button onClick={handleSubmit}>Submit</Button>
-        <ButtonCancel onClick={onClose}>Cancel</ButtonCancel>
+        <ButtonCancel>Cancel</ButtonCancel>
       </ButtonContainer>
 
-      <ToastContainer position='top-right' autoClose={5000} hideProgressBar={false} closeOnClick/>
-      
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={true}
+        closeOnClick
+      />
     </FormContainer>
   );
 };
+
 const FormContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -190,14 +376,7 @@ const FormContainer = styled.div`
   border-radius: 8px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 `;
-<ToastContainer
-  position="top-right"
-  autoClose={5000}
-  hideProgressBar={false}
-  closeOnClick
-  pauseOnHover
-  draggable
-/>
+
 const FormTitle = styled.h2`
   margin-bottom: 20px;
   font-size: 1.8rem;
@@ -217,35 +396,47 @@ const Label = styled.label`
   margin-bottom: 8px;
 `;
 
-const Input = styled.input`
+const InputFile = styled.input`
   width: 100%;
   padding: 10px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
   outline: none;
-  transition: border 0.3s ease, background-color 0.3s ease;
+  transition: border 0.3s ease;
   box-sizing: border-box;
-
-  &::placeholder {
-    color: #999;  // Initial placeholder color
-    font-style: italic;
-    transition: color 0.3s ease; // Smooth transition for color change
-  }
-
-  &:focus {
-    border-color: #007bff; // Border color on focus
-  }
-
-  &:focus::placeholder {
-    color: #007bff;  // Change placeholder color on focus
-  }
- // Change placeholder color when hovering
-  }
 
   &:focus {
     border-color: #007bff;
   }
+
+  &::file-selector-button {
+    background-color: #007bff;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  &::file-selector-button:hover {
+    background-color: #0056b3;
+  }
+`;
+
+const MediaPreviewWrapper = styled.div`
+  padding: 5px 0 10px;
+  width: 100%;
+`;
+
+const RamContainer = styled.div`
+  display: flex;
+  margin-bottom: -45px;
+  cursor: pointer;
+  z-index: 10;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%; // Ensure it takes full width
+  padding-right: 20px; // Optional: adjust padding to space out the cross icon
 `;
 
 const TextArea = styled.textarea`
@@ -274,8 +465,6 @@ const TextArea = styled.textarea`
     color: #007bff;
   }
 `;
-
-
 const Select = styled.select`
   width: 100%;
   padding: 10px;
@@ -295,7 +484,7 @@ const Select = styled.select`
   }
 
   option:first-child {
-    color: #999;  // Placeholder option color (first item)
+    color: #999; // Placeholder option color (first item)
   }
 
   &:focus option:first-child {
@@ -330,4 +519,5 @@ const ButtonCancel = styled(Button)`
     background-color: #888;
   }
 `;
+
 export default ServiceRequestForm;
