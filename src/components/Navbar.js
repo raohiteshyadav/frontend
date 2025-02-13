@@ -1,56 +1,103 @@
-import { HamIcon, Menu } from 'lucide-react';
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import ContactUs from './contactus';
-import { Image } from '@chakra-ui/react';
+import { Menu } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import styled from "styled-components";
+import { Image, Box, Text } from "@chakra-ui/react";
+import LogoutButton from "./logout";
+import { useAuth } from "../providers/authProvider";
 
 const Navbar = () => {
+  const user = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navbarRef = useRef(null);
-  const navigate= useNavigate();
+  const navigate = useNavigate();
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-    
   };
   const handleClickOutside = (event) => {
     if (navbarRef.current && !navbarRef.current.contains(event.target)) {
       setIsMenuOpen(false);
     }
-};
-useEffect(() => {
+  };
+  useEffect(() => {
     document.addEventListener("click", handleClickOutside);
     return () => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
 
-  
   return (
-    <Nav display={'flex'} ref={navbarRef}>
+    <Nav display={"flex"} ref={navbarRef}>
       <Image
-      marginLeft={'auto'}
-                    src='https://blackbucks-media.s3.ap-south-1.amazonaws.com/Rashmi%20group%20logo%20White%20Bar-1738846415526.png'
-                    alt="Rashmi Seamless Logo"
-                    maxWidth={ "170px" } 
-                    height="auto" 
-                    objectFit="contain"
-                    display="block" 
-                    mx="auto" 
-                    userSelect={'none'}
-                    onContextMenu={(e) => e.preventDefault()}
-                    draggable={false}
-                    // mt={-3}
-                />
-      {/* <Logo>Rashmi Group</Logo> */}
+        marginLeft={"0"}
+        src="https://blackbucks-media.s3.ap-south-1.amazonaws.com/Rashmi%20group%20logo%20White%20Bar-1738846415526.png"
+        alt=""
+        maxWidth={"170px"}
+        height="auto"
+        objectFit="contain"
+        display="block"
+        userSelect={"none"}
+        onContextMenu={(e) => e.preventDefault()}
+        draggable={false}
+        //mt={-3}
+        zIndex={999}
+      />
+      {/* <Box display={["none","none","none","none", "flex"]} fontWeight="bold" fontSize="3xl" >
+        IT SELF SERVICE PORTAL
+      </Box> */}
+      <Text
+  display={['none', 'none', 'none', 'none', 'inline-block']}
+  fontWeight="bold"
+  fontSize="3xl"
+  bgGradient="linear(to-r, orange.500, white, green.500)"
+  bgClip="text"
+>
+  IT SELF SERVICE PORTAL
+</Text>
+
       <MenuToggle onClick={toggleMenu}>
         <Menu isOpen={isMenuOpen} />
       </MenuToggle>
       <NavLinks isOpen={isMenuOpen}>
-        <NavLink href="/">Home</NavLink>
-        <NavLink onClick={()=> navigate('/raise-a-ticket')}>Raise A Ticket</NavLink>
-        <NavLink href="#services">Approval</NavLink>
-        <NavLink onClick={()=> navigate('/contact')}>Contact Us</NavLink>
+        {!(user?.role === "employee" || user?.role === "head") && (
+          <NavLink
+            onClick={() => {
+              user.role === "admin" ? navigate("/") : navigate("/home");
+              toggleMenu();
+            }}
+          >
+            {user?.role === "admin" ? "IT Head" : "IT Dept"}
+          </NavLink>
+        )}
+        <NavLink
+          onClick={() => {
+            navigate("/raise-a-ticket");
+            toggleMenu();
+          }}
+        >
+          Raise A Ticket
+        </NavLink>
+        {user?.role != "employee" && (
+          <NavLink
+            onClick={() => {
+              navigate("/approval");
+              toggleMenu();
+            }}
+          >
+            Approval
+          </NavLink>
+        )}
+        <NavLink
+          onClick={() => {
+            navigate("/contact");
+            toggleMenu();
+          }}
+        >
+          Contact Us
+        </NavLink>
+        <NavLink>
+          <LogoutButton />
+        </NavLink>
       </NavLinks>
     </Nav>
   );
@@ -58,21 +105,16 @@ useEffect(() => {
 
 const Nav = styled.nav`
   display: flex;
-  width:100%;
+  width: 100%;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
+  padding: 0px 20px;
   background-color: #333;
   color: white;
   position: sticky;
   top: 0;
   z-index: 100;
   box-sizing: border-box;
-`;
-
-const Logo = styled.div`
-  font-size: 1.5rem;
-  font-weight: bold;
 `;
 
 const MenuToggle = styled.div`
@@ -84,30 +126,16 @@ const MenuToggle = styled.div`
   }
 `;
 
-const Hamburger = styled.div`
-  width: 25px;
-  height: 25px;
-  background-color: white;
-  margin: 5px 0;
-  transition: all 0.3s;
-  transform: ${({ isOpen }) => (isOpen ? 'rotate(180deg)' : 'rotate(0)')};
-
-  &:nth-child(2) {
-    opacity: ${({ isOpen }) => (isOpen ? 0 : 1)};
-  }
-
-  &:nth-child(3) {
-    transform: ${({ isOpen }) => (isOpen ? 'rotate(-45deg)' : 'rotate(0)')};
-  }
-`;
-
 const NavLinks = styled.div`
   display: flex;
+  align-items: center;
   gap: 20px;
 
   @media (max-width: 768px) {
-    display: ${({ isOpen }) => (isOpen ? 'flex' : 'none')};
+    display: ${({ isOpen }) => (isOpen ? "flex" : "none")};
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: 60px;
     left: 0;
@@ -115,7 +143,7 @@ const NavLinks = styled.div`
     width: 100%;
     padding: 20px;
     gap: 10px;
-    box-sizing:border-box;
+    box-sizing: border-box;
   }
 `;
 
@@ -123,9 +151,15 @@ const NavLink = styled.a`
   color: white;
   text-decoration: none;
   font-size: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 2px;
 
   &:hover {
     color: #007bff;
+    cursor: pointer;
   }
 `;
 

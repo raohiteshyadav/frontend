@@ -1,23 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MediaUploader from "./mediaUploader";
 import MediaPreview from "./mediaPreview";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { X } from "lucide-react";
 const apiIp = process.env.REACT_APP_API_IP;
-const ServiceRequestForm = () => {
+
+const PreviewIncSerIt = () => {
+  const { id } = useParams(); // Get the ID from the URL
   const navigate = useNavigate();
+  
+  // Form state
   const [description, setDescription] = useState("");
-  const [severity, setSeverity] = useState("High");
+  const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [item, setItem] = useState("");
   const [attachmentId, setAttachmentId] = useState(null);
   const [fileName, setFileName] = useState(null);
+  const [approved, setApproved] = useState('');
+  const [remark, setRemark]= useState("");
 
+  
   const categories = {
     Server: {
       Windows: [
@@ -188,56 +195,67 @@ const ServiceRequestForm = () => {
     },
   };
 
-  const subcategories = category ? Object.keys(categories[category]) : [];
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch pre-filled form data using the ID from the URL
+    if (id) {
+      
+    const token = localStorage.getItem("token");
+      axios
+      .get(`http://${apiIp}:3000/tickets/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then((response) => {
+          const data = response.data;
+          setDescription(data.query);
+          setSeverity(data.priority);
+          setCategory(data.category);
+          setSubcategory(data.subCategory);
+          setItem(data.item);
+          setAttachmentId(data.attachmentId);
+          setFileName(data.attachmentName);
+          setApproved(data.itApprovedAt);
+          setRemark(data.remark);
+        })
+        .catch((error) => {
+          console.error("Error fetching prefilled data:", error);
+          toast.error("Error fetching data for prefill");
+        });
+    }
+    console.log(approved);
+  }, [id]);
+
+  // Handle category, subcategory, and item fetching (if necessary)
+  const subcategories = category ? Object.keys(categories[category] || {}) : [];
   const items = subcategory ? categories[category][subcategory] : [];
 
-  const handleUploadSuccess = ({ attachmentId, fileName }) => {
-    setAttachmentId(attachmentId);
-    setFileName(fileName);
-    toast.success("File uploaded successfully!!");
-  };
-
-  const handleClearAttachment = () => {
-    setAttachmentId(null);
-    setFileName(null);
-  };
   const handleSubmit = () => {
-    if (!severity || !category || !subcategory || !item) {
-      toast.error("Please fill all required fields!"); // Toast notification
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("type", "Service");
-    formData.append("description", description);
-    formData.append("severity", severity);
-    formData.append("status", "pending");
-    formData.append("category", category);
-    formData.append("subcategory", subcategory);
-    formData.append("item", item);
-
     const payload = {
-      query: description,
-      priority: severity,
-      subCategory: subcategory,
-      item: item,
-      category,
-      type: "Service",
-      attachmentId: attachmentId || undefined,
-    };
-
+        query: description,
+        priority: severity,
+        subCategory: subcategory,
+        item: item,
+        category,
+        type: "Service",
+        attachmentId: attachmentId || undefined,
+        remark:remark,
+        request:'resolved',
+        action:'approved'
+      };
     const token = localStorage.getItem("token");
     axios
-      .post(`http://${apiIp}:3000/tickets/create`, payload, {
+      .post(`http://${apiIp}:3000/tickets/${id}`,payload,  {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       })
       .then(() => {
-        toast.success("Ticket raised Successfully!!");
-
-        navigate("/raise-a-ticket");
+        toast.success("Ticket Approved Successfully!!");
+        navigate("/home");
       })
       .catch((error) => console.error(error));
   };
@@ -246,6 +264,7 @@ const ServiceRequestForm = () => {
     <FormContainer>
       <FormTitle>Service Request Form</FormTitle>
 
+      {/* Category field */}
       <FormField required={true}>
         <Label required={true}>Category <span style={{ color: 'red' }}>*</span></Label>
         <Select
@@ -265,6 +284,8 @@ const ServiceRequestForm = () => {
           ))}
         </Select>
       </FormField>
+
+      {/* Subcategory field */}
       <FormField>
         <Label>Subcategory <span style={{ color: 'red' }}>*</span></Label>
         <Select
@@ -284,6 +305,7 @@ const ServiceRequestForm = () => {
         </Select>
       </FormField>
 
+      {/* Item field */}
       <FormField>
         <Label>Item <span style={{ color: 'red' }}>*</span></Label>
         <Select
@@ -299,66 +321,49 @@ const ServiceRequestForm = () => {
           ))}
         </Select>
       </FormField>
+
+      {/* Severity field */}
       <FormField>
-        {/* <Label>Severity <span style={{ color: 'red' }}>*</span></Label>
+        <Label>Severity <span style={{ color: 'red' }}>*</span></Label>
         <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
           <option value="">Select a severity</option>
           <option value="Low">Low</option>
           <option value="Medium">Medium</option>
           <option value="High">High</option>
-        </Select> */}
+        </Select>
       </FormField>
+
+      {/* Description field */}
       <FormField>
         <Label>Description <span style={{ color: 'red' }}>*</span></Label>
         <TextArea
-          placeholder="Enter request description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          readOnly
+          className="read-only"
         />
       </FormField>
-      {attachmentId && (
-        <RamContainer>
-          <X color={"red"} onClick={handleClearAttachment} />
-        </RamContainer>
-      )}
-      {!attachmentId && (
-        <FormField>
-          <Label>Attach File (Optional)</Label>
-          <MediaUploader
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={(error) => {
-              toast.error("Error while uploading file");
-              console.error(error);
-            }}
-            maxSizeMB={10}
-            uploadUrl={`http://${apiIp}:3000/media/upload`}
-            acceptedFileTypes={[
-              "application/pdf",
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-            ]}
-            disabled={!!attachmentId}
-          />
-        </FormField>
-      )}
 
+      {/* Media preview */}
       {attachmentId && (
         <MediaPreviewWrapper>
           <MediaPreview mediaId={attachmentId} />
         </MediaPreviewWrapper>
       )}
-      <ButtonContainer>
-        <Button onClick={handleSubmit}>Submit</Button>
-        <ButtonCancel>Cancel</ButtonCancel>
+       <FormField>
+        <Label>Remark <span style={{ color: 'red' }}>*</span></Label>
+        <TextArea
+          placeholder="Enter request description"
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+        />
+      </FormField>
+
+      {/* Submit and cancel buttons */}
+      <ButtonContainer >
+        <Button disabled={approved} onClick={handleSubmit}>Resolve</Button>
       </ButtonContainer>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={true}
-        closeOnClick
-      />
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={true} closeOnClick />
     </FormContainer>
   );
 };
@@ -375,6 +380,11 @@ const FormContainer = styled.div`
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+`;
+
+const MediaPreviewWrapper = styled.div`
+  padding: 5px 0 10px;
+  width: 100%;
 `;
 
 const FormTitle = styled.h2`
@@ -394,49 +404,6 @@ const Label = styled.label`
   color: #333;
   display: block;
   margin-bottom: 8px;
-`;
-
-const InputFile = styled.input`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &::file-selector-button {
-    background-color: #007bff;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-  }
-
-  &::file-selector-button:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const MediaPreviewWrapper = styled.div`
-  padding: 5px 0 10px;
-  width: 100%;
-`;
-
-const RamContainer = styled.div`
-  display: flex;
-  margin-bottom: -45px;
-  cursor: pointer;
-  z-index: 10;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%; // Ensure it takes full width
-  padding-right: 20px; // Optional: adjust padding to space out the cross icon
 `;
 
 const TextArea = styled.textarea`
@@ -464,7 +431,16 @@ const TextArea = styled.textarea`
   &:focus::placeholder {
     color: #007bff;
   }
+
+   &.read-only {
+    background-color: #f1f1f1;  /* Light gray background */
+    color: #888;  /* Dull text color */
+    cursor: not-allowed;  /* Change cursor to indicate it's not clickable */
+    border-color: #ddd;  /* Light border color */
+    pointer-events: none; /* Disable mouse interaction */
+  }
 `;
+
 const Select = styled.select`
   width: 100%;
   padding: 10px;
@@ -477,18 +453,6 @@ const Select = styled.select`
 
   &:focus {
     border-color: #007bff;
-  }
-
-  option {
-    color: #555;
-  }
-
-  option:first-child {
-    color: #999; // Placeholder option color (first item)
-  }
-
-  &:focus option:first-child {
-    color: #007bff; // Change placeholder option color when focused
   }
 `;
 
@@ -507,10 +471,27 @@ const Button = styled.button`
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  &:disabled {
+    color:rgb(27, 199, 70);
+    background-color: #d6d6d6;  // Grey out the button
+    cursor: not-allowed;       // Change cursor to indicate it's disabled
+    opacity: 0.6;              // Make it less visible
+  }
 
   &:hover {
     background-color: #0056b3;
   }
+`;
+
+const RamContainer = styled.div`
+  display: flex;
+  margin-bottom: -45px;
+  cursor: pointer;
+  z-index: 10;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%; // Ensure it takes full width
+  padding-right: 20px; // Optional: adjust padding to space out the cross icon
 `;
 
 const ButtonCancel = styled(Button)`
@@ -520,4 +501,4 @@ const ButtonCancel = styled(Button)`
   }
 `;
 
-export default ServiceRequestForm;
+export default PreviewIncSerIt;

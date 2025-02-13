@@ -24,12 +24,12 @@ const DEFAULT_ACCEPTED_TYPES = [
   "image/gif",
 ];
 const DEFAULT_MAX_SIZE = 10;
-
+const apiIp = process.env.REACT_APP_API_IP;
 export const MediaUploader = ({
   onUploadSuccess,
   onUploadError,
   maxSizeMB = DEFAULT_MAX_SIZE,
-  uploadUrl = "http://192.168.49.160:3000/media/upload",
+  uploadUrl = `http://${apiIp}:3000/media/upload`,
   acceptedFileTypes = DEFAULT_ACCEPTED_TYPES,
 }) => {
   const [uploadingFile, setUploadingFile] = useState(null);

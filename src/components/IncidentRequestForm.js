@@ -7,7 +7,7 @@ import MediaUploader from "./mediaUploader";
 import MediaPreview from "./mediaPreview";
 import { Box, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+const apiIp = process.env.REACT_APP_API_IP;
 const IncidentRequestForm = () => {
 
   const navigate = useNavigate();
@@ -232,7 +232,7 @@ const IncidentRequestForm = () => {
     };
     const token = localStorage.getItem("token");
     axios
-      .post("http://192.168.49.160:3000/tickets/create", payload, {
+      .post(`http://${apiIp}:3000/tickets/create`, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -334,7 +334,7 @@ const IncidentRequestForm = () => {
               console.error(error);
             }}
             maxSizeMB={10}
-            uploadUrl="http://192.168.49.160:3000/media/upload"
+            uploadUrl={ `http://${apiIp}:3000/media/upload`}
             acceptedFileTypes={[
               "application/pdf",
               "image/jpeg",

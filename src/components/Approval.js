@@ -29,23 +29,16 @@ const Approval = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const pageSize=5;
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(false);
-  //const user = useAuth();
-  const user = {
-    name: "john doe",
-    id: "RML033198",
-    email: "johndoe@example.com",   // Default email            // Default Employee ID
-    role: "IT Support",             // Default Role
-    reportingTo: "Jane Smith",          // Default Manager
-    department: "IT",               // Default Department
-    contact: "7206721299"       // Default Contact Number
-  };
+  const user = useAuth();
+  const apiIp = process.env.REACT_APP_API_IP;
   const fetchData = async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://192.168.49.160:3000/tickets/list",
+        `http://${apiIp}:3000/tickets/approval?pageNumber=${currentPage}&pageSize=${pageSize}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -187,11 +180,13 @@ const Approval = () => {
             <Table variant="simple">
               <Thead bg="gray.50">
                 <Tr>
-                  <Th>Sequence No.</Th>
+                  <Th>Ticket No.</Th>
                   <Th>Description</Th>
                   <Th>Status</Th>
+                  <Th>Action</Th>
                   <Th>Type</Th>
                   <Th>Date</Th>
+                  <Th>Created By</Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -203,11 +198,14 @@ const Approval = () => {
                   _hover={{ bg: "gray.50" }}>
                     <Td>{request.sequenceNo}</Td>
                     <Td>{request.query}</Td>
-                    <Td color={request.itApprovedAt ? "green.500" : "red.500"}>
-                      {request.itApprovedAt ? "Resolved" : "Open"}
+                    <Td color={request.resolvedAt?"green.500":"red.500"}>
+                      {request.resolvedAt ? "Closed" : "Open"}
                     </Td>
+                    <Td>{request.headRejectedAt?'Rejected':request.headApprovedAt?"Approved":""}</Td>
                     <Td>{request.type}</Td>
                     <Td>{request.createdAt}</Td>
+                    <Td>{request.createdBy}</Td>
+                    <Td></Td>
                   </Tr>
                 ))}
               </Tbody>

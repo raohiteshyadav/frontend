@@ -15,7 +15,7 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { DownloadIcon } from "lucide-react";
-
+const apiIp = process.env.REACT_APP_API_IP;
 const extractFileName = (contentDisposition) => {
   if (!contentDisposition) return "Unknown File";
 
@@ -29,7 +29,7 @@ const extractFileName = (contentDisposition) => {
 
 const MediaPreview = ({
   mediaId,
-  baseUrl = `http://192.168.49.160:5000`,
+  baseUrl = `http://${apiIp}:3000`,
 }) => {
   const [mediaState, setMediaState] = useState({
     data: null,
@@ -108,7 +108,7 @@ const MediaPreview = ({
         size="md"
         mt={2}
       >
-        Download {name}
+        Download file
       </Button>
     );
 

@@ -3,10 +3,14 @@ import { Box, Heading, Text, Link, SimpleGrid, VStack } from '@chakra-ui/react';
 
 const ContactUs = () => {
   const teamMembers = [
-    { name: "Hitesh Kumar", position: "Software Developer", email: "john.doe@rashmigroup.com" },
-    { name: "Harish Kumar", position: "SDE-IV", email: "jane.smith@rashmigroup.com" },
-    { name: "Anand", position: "Lead Developer", email: "mark.johnson@rashmigroup.com" },
-    { name: "Shariquee", position: "BACKEND DEVELOPER", email: "sara.williams@rashmigroup.com" },
+    { name: "Hitesh Kumar", position: "SDE 1", email: "john.doe@rashmigroup.com" },
+    { name: "Harish Kumar", position: "SDE 2", email: "jane.smith@rashmigroup.com" },
+    { name: "Anand", position: "SDE", email: "mark.johnson@rashmigroup.com" },
+    { name: "Shariquee", position: "SDE", email: "sara.williams@rashmigroup.com" },
+    { name: "DVT Reddy", position: "SDE", email: "DVTREDDY9@rashmigroup.com" },
+    { name: "Chirag Singh", position: "SDE", email: "chirag3501@rashmigroup.com" },
+    { name: "Harsh Vamsi", position: "SDE", email: "harshVamsi@rashmigroup.com" },
+    { name: "Bhargav", position: "SDE", email: "bhargav@rashmigroup.com" },
   ];
 
   return (

@@ -12,7 +12,7 @@ import {
   //Spinner,
   useToast,
 } from "@chakra-ui/react";
-
+const apiIp = process.env.REACT_APP_API_IP;
 const Login = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [email, setEmail] = useState("");
@@ -26,7 +26,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://192.168.49.160:3000/user/send-otp", {
+      const response = await fetch(`http://${apiIp}:3000/user/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -53,7 +53,7 @@ const Login = () => {
 
     try {
       const response = await fetch(
-        "http://192.168.49.160:3000/user/verify-otp",
+        `http://${apiIp}:3000/user/verify-otp`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
