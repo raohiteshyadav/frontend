@@ -29,7 +29,7 @@ const Marquee = ({ text }) => {
       overflow="hidden"
       width="100%"
       py={4}
-      bg={'#f7fafc'}
+      bg={'gray.100'}
     >
       <Box
         as="div"

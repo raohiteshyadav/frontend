@@ -9,6 +9,8 @@ import PreviewSerIt from "./components/previewserit";
 import DashboardIt from "./components/dashboardit";
 import PreviewIncSerIt from "./components/previewincserit";
 import Footer from "./components/footer";
+import UserList from "./components/itsuperadmin";
+import UserCat from "./components/itsuperadmincat";
 
 // Lazy loading components
 const ServiceRequestForm = lazy(() =>
@@ -91,6 +93,7 @@ function App() {
                     path="/incident-request"
                     element={<IncidentRequestForm />}
                   />
+                 
                   <Route
                     path="/"
                     element={
@@ -117,6 +120,22 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route
+                    path="/superadmin-userlist"
+                    element={
+                      <ProtectedRoute allowedRoles={["IT", "admin"]}>
+                        <UserList />
+                      </ProtectedRoute>
+                    }
+                  />
+                    <Route
+                    path="/superadmin-category"
+                    element={
+                      <ProtectedRoute allowedRoles={["IT", "admin"]}>
+                        <UserCat/>
+                      </ProtectedRoute>
+                    }
+                  />                
                 </Routes>
               </div>
             </div>

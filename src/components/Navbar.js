@@ -42,9 +42,7 @@ const Navbar = () => {
         //mt={-3}
         zIndex={999}
       />
-      {/* <Box display={["none","none","none","none", "flex"]} fontWeight="bold" fontSize="3xl" >
-        IT SELF SERVICE PORTAL
-      </Box> */}
+      
       <Text
   display={['none', 'none', 'none', 'none', 'inline-block']}
   fontWeight="bold"
@@ -68,6 +66,16 @@ const Navbar = () => {
           >
             {user?.role === "admin" ? "IT Head" : "IT Dept"}
           </NavLink>
+        )}
+         {(user?.role === "it" || user?.role === "admin") &&(
+          <NavLink
+          onClick={() => {
+            navigate("/superadmin-userlist");
+            toggleMenu();
+          }}
+        >
+          Super-Admin
+        </NavLink>
         )}
         <NavLink
           onClick={() => {

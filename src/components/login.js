@@ -9,10 +9,13 @@ import {
   InputLeftElement,
   Stack,
   Text,
-  //Spinner,
   useToast,
+  Grid,
+  GridItem,
 } from "@chakra-ui/react";
+
 const apiIp = process.env.REACT_APP_API_IP;
+
 const Login = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [email, setEmail] = useState("");
@@ -35,13 +38,13 @@ const Login = () => {
       if (!response.ok) throw new Error("Failed to send OTP");
       setShowOtp(true);
     } catch (err) {
-    //    toast({
-    //      title: "Error",
-    //      description: "Failed to send OTP. Please try again.",
-    //      status: "error",
-    //      duration: 3000,
-    //      isClosable: true,
-    //    });
+      //    toast({
+      //      title: "Error",
+      //      description: "Failed to send OTP. Please try again.",
+      //      status: "error",
+      //      duration: 3000,
+      //      isClosable: true,
+      //    });
     } finally {
       setLoading(false);
     }
@@ -52,14 +55,11 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `http://${apiIp}:3000/user/verify-otp`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, passkey: otp }),
-        }
-      );
+      const response = await fetch(`http://${apiIp}:3000/user/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, passkey: otp }),
+      });
 
       if (!response.ok) {
         throw new Error("Invalid OTP");
@@ -69,12 +69,12 @@ const Login = () => {
       localStorage.setItem("token", data.token);
       navigate("/raise-a-ticket");
     } catch (err) {
-       toast({
-         title: "Error",
-         description: "Invalid OTP. Please try again.",
-         status: "error",
-         duration: 3000,
-         isClosable: true,
+      toast({
+        title: "Error",
+        description: "Invalid OTP. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
       });
     } finally {
       setLoading(false);
@@ -94,36 +94,42 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <Box
-      minH="85vh"
-      mt={'auto'}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      bg="gray.50"
+    <Grid
+      templateColumns="50% 50%" // Divide the screen into two equal parts
+      minH="70vh" // Ensure the grid covers the entire screen height
+      maxH="79vh"
+      overflowY={"hidden"}
     >
-      <Box bg="white" p={8} borderRadius="md" boxShadow="lg" w="full" maxW="md">
-        <Text fontSize={"xl"} textAlign="center" mb={6}>
-          {showOtp ? "Enter OTP" : "Login"}
-        </Text>
+      {/* Left Side: Image */}
+      <GridItem
+        minH="80vh"
+        bgImage="https://blog.octobits.io/wp-content/uploads/2023/12/octobits-it-services-management-framework.png"
+        bgSize="cover"
+        bgPosition="center"
+      />
 
-        <form onSubmit={showOtp ? handleOtpSubmit : handleEmailSubmit}>
-          <Stack spacing={4}>
-            {!showOtp ? (
-              <InputGroup>
-                <InputLeftElement pointerEvents="none">
-                  <Mail size={20} />
-                </InputLeftElement>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  required
-                />
-              </InputGroup>
-            ) : (
-              <>
+      {/* Right Side: Login Form */}
+      <GridItem
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        bg="gray.50"
+      >
+        <Box
+          bg="white"
+          p={8}
+          borderRadius="md"
+          boxShadow="lg"
+          w="full"
+          maxW="md"
+        >
+          <Text fontSize={"xl"} textAlign="center" mb={6}>
+            {showOtp ? "Enter OTP" : "Login"}
+          </Text>
+
+          <form onSubmit={showOtp ? handleOtpSubmit : handleEmailSubmit}>
+            <Stack spacing={4}>
+              {!showOtp ? (
                 <InputGroup>
                   <InputLeftElement pointerEvents="none">
                     <Mail size={20} />
@@ -131,48 +137,63 @@ const Login = () => {
                   <Input
                     type="email"
                     value={email}
-                    readOnly
-                    onDoubleClick={() => setShowOtp(false)}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
-                    color="gray.500"
                     required
                   />
                 </InputGroup>
-                <InputGroup>
-                  <InputLeftElement pointerEvents="none">
-                    <Lock size={20} />
-                  </InputLeftElement>
-                  <Input
-                    type="text"
-                    value={otp}
-                    onChange={handleOtpChange}
-                    placeholder="Enter 4-digit OTP"
-                    required
-                    maxLength={4}
-                  />
-                </InputGroup>
-              </>
-            )}
+              ) : (
+                <>
+                  <InputGroup>
+                    <InputLeftElement pointerEvents="none">
+                      <Mail size={20} />
+                    </InputLeftElement>
+                    <Input
+                      type="email"
+                      value={email}
+                      readOnly
+                      onDoubleClick={() => setShowOtp(false)}
+                      placeholder="Enter your email"
+                      color="gray.500"
+                      required
+                    />
+                  </InputGroup>
+                  <InputGroup>
+                    <InputLeftElement pointerEvents="none">
+                      <Lock size={20} />
+                    </InputLeftElement>
+                    <Input
+                      type="text"
+                      value={otp}
+                      onChange={handleOtpChange}
+                      placeholder="Enter 4-digit OTP"
+                      required
+                      maxLength={4}
+                    />
+                  </InputGroup>
+                </>
+              )}
 
-            <Button
-              type="submit"
-              colorScheme="blue"
-              isLoading={loading}
-              loadingText="Processing..."
-              rightIcon={!loading && <ArrowRight size={16} />}
-            >
-              {showOtp ? "Verify OTP" : "Continue"}
-            </Button>
-
-            {showOtp && (
-              <Button variant="outline" onClick={() => setShowOtp(false)}>
-                Back to Email
+              <Button
+                type="submit"
+                colorScheme="blue"
+                isLoading={loading}
+                loadingText="Processing..."
+                rightIcon={!loading && <ArrowRight size={16} />}
+              >
+                {showOtp ? "Verify OTP" : "Continue"}
               </Button>
-            )}
-          </Stack>
-        </form>
-      </Box>
-    </Box>
+
+              {showOtp && (
+                <Button variant="outline" onClick={() => setShowOtp(false)}>
+                  Back to Email
+                </Button>
+              )}
+            </Stack>
+          </form>
+        </Box>
+      </GridItem>
+    </Grid>
   );
 };
 
