@@ -107,7 +107,9 @@ const Dashboard = () => {
             >
               <Stat>
                 <StatLabel>All</StatLabel>
-                <StatNumber color="blue.500">{openIncident+closeIncident}</StatNumber>
+                <StatNumber color="blue.500">
+                  {openIncident + closeIncident}
+                </StatNumber>
               </Stat>
               <Stat>
                 <StatLabel>Open</StatLabel>
@@ -134,7 +136,9 @@ const Dashboard = () => {
             >
               <Stat>
                 <StatLabel>All</StatLabel>
-                <StatNumber color="blue.500">{openService+closeService}</StatNumber>
+                <StatNumber color="blue.500">
+                  {openService + closeService}
+                </StatNumber>
               </Stat>
               <Stat>
                 <StatLabel>Open</StatLabel>
@@ -170,10 +174,9 @@ const Dashboard = () => {
                 </Tr>
               </Thead>
               <Tbody>
-                {lists.map((request,index) => (
-    
+                {lists.map((request, index) => (
                   <Tr key={request.id}>
-                    <Td>{(currentPage-1)*pageSize +index+1}</Td>
+                    <Td>{(currentPage - 1) * pageSize + index + 1}</Td>
                     <Td>{request.createdAt}</Td>
                     <Td>{request.sequenceNo}</Td>
                     <Td>{request.query}</Td>
@@ -184,20 +187,34 @@ const Dashboard = () => {
                     <Td>{request.type}</Td>
                     <Td>
                       <Box display={"flex"} gap={2}>
-                        <Button
-                          onClick={() => handleRowClick(request.id)}
-                          style={{ cursor: "pointer" }}
-                          _hover={{ bg: "gray.50" }}
-                          p={2}
-                          color={"green.400"}
-                        >
-                          Approve
-                        </Button>
+                        {request.type !== "Incident" && (
+                          <Button
+                            onClick={() => handleRowClick(request.id)}
+                            style={{ cursor: "pointer" }}
+                            _hover={{ bg: "gray.50" }}
+                            p={2}
+                            color={"green.400"}
+                          >
+                            Approve
+                          </Button>
+                        )}
                       </Box>
-                    </Td>                  
-                    <Td>{request.type === "Incident"?"":request.itHeadApprovedAt ? "L2 Approved":request.itHeadRejectedAt?"L2 Rejected":request.headApprovedAt?"L1 Approved":request.headRejectedAt?"L1 Rejected":"Waiting for L1 Approval"}</Td>
+                    </Td>
+                    <Td>
+                      {request.type === "Incident"
+                        ? ""
+                        : request.itHeadApprovedAt
+                        ? "L2 Approved"
+                        : request.itHeadRejectedAt
+                        ? "L2 Rejected"
+                        : request.headApprovedAt
+                        ? "L1 Approved"
+                        : request.headRejectedAt
+                        ? "L1 Rejected"
+                        : "Waiting for L1 Approval"}
+                    </Td>
                     <Td>{request.remark}</Td>
-                    <Td>{request.resolvedBy??"Not resolved"}</Td>
+                    <Td>{request.resolvedBy ?? "Not resolved"}</Td>
                   </Tr>
                 ))}
               </Tbody>

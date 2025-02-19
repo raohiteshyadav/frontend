@@ -70,7 +70,7 @@ const Navbar = () => {
          {(user?.role === "it" || user?.role === "admin") &&(
           <NavLink
           onClick={() => {
-            navigate("/superadmin-userlist");
+            navigate("/superadmin");
             toggleMenu();
           }}
         >

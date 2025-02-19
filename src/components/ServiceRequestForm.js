@@ -1,15 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  VStack,
+  Heading,
+  FormControl,
+  FormLabel,
+  Select,
+  Textarea,
+  Button,
+  useToast,
+  Container,
+  Card,
+  CardBody,
+  CardHeader,
+  Text,
+  Divider,
+  Badge,
+  Flex,
+  Skeleton,
+  HStack,
+  IconButton,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import axios from "axios";
-import styled from "styled-components";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import MediaUploader from "./mediaUploader";
-import MediaPreview from "./mediaPreview";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
+import MediaUploader from "./mediaUploader";
+import MediaPreview from "./mediaPreview";
+
 const apiIp = process.env.REACT_APP_API_IP;
+
 const ServiceRequestForm = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+
+  // Form state
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("High");
   const [category, setCategory] = useState("");
@@ -18,210 +43,199 @@ const ServiceRequestForm = () => {
   const [attachmentId, setAttachmentId] = useState(null);
   const [fileName, setFileName] = useState(null);
 
-  const categories = {
-    Server: {
-      Windows: [
-        "Application Install / Uninstall",
-        "Server Provisioning",
-        "Server Decommission",
-        "Capacity & Resources",
-        "Configure Role / Service",
-        "Operating System",
-        "Patch Update",
-        "Windows Others",
-      ],
-      Linux: [
-        "Application Install / Uninstall",
-        "Server Provisioning",
-        "Server Decommission",
-        "Capacity & Resources",
-        "Configure Role / Service",
-        "Operating System",
-        "Patch Update",
-        "Linux Others",
-      ],
-      "Physical Server": [
-        "Capacity Upgrade",
-        "Patch Update",
-        "Firmware Upgrade",
-        "Operating System",
-        "Decommission",
-        "Physical Server Others",
-      ],
-    },
-    Network: {
-      Switch: [
-        "Implement",
-        "Port Configuration",
-        "Patch Update",
-        "Firmware Upgrade",
-        "Decommission",
-        "Switch Others",
-      ],
-      Firewall: [
-        "Implement",
-        "Configure Policy",
-        "VPN Configuration",
-        "Patch Update",
-        "Firmware Upgrade",
-        "Decommission",
-        "Firewall Others",
-      ],
-      "Load Balancer": [
-        "Configure Policy",
-        "Patch Update",
-        "Firmware Upgrade",
-        "Decommission",
-        "Load Balancer Others",
-      ],
-      Internet: [
-        "Internet Access",
-        "Website Whitelisting",
-        "Website Blacklisting",
-        "Domain & Email Blacklist",
-      ],
-    },
-    Storage: {
-      NAS: [
-        "Implement",
-        "Enhance NAS Capacity",
-        "Allocate/Additional Storage",
-        "Deallocate/Reduce Storage",
-        "New Shared Storage",
-        "Patch Update",
-        "Firmware Upgrade",
-        "Decommission",
-        "Access to existing storage",
-        "NAS Others",
-      ],
-    },
-    Backup: {
-      Backup: [
-        "Add/Modify New Backup",
-        "Delete Existing Backup",
-        "Configure Backup Application",
-        "Configure Tape Library",
-        "Request Additional Tapes",
-      ],
-      Restore: [
-        "VM Restore",
-        "Database Restore",
-        "Document Restore",
-        "Restore Others",
-      ],
-    },
-    Helpdesk: {
-      "Desktop & Laptop": [
-        "Desktop & Laptop Request",
-        "Configure Desktop",
-        "Configure Laptop",
-        "Software Install/Uninstall",
-        "Laptop WiFi Request",
-        "Desktop & Laptop Others",
-        "New Keyboard",
-        "New Mouse",
-        "New Dockstation",
-        "New Monitor",
-      ],
-      Others: [
-        "Configure Printer & Scanner",
-        "Print/Scan Documents",
-        "Conference Room Setup",
-        "Helpdesk Others",
-      ],
-    },
-    Database: {
-      Oracle: [
-        "Implement",
-        "Database Configuration",
-        "Performance Tuning",
-        "Create / Modify Database",
-        "Delete / Drop Database",
-        "Oracle Others",
-      ],
-      SQL: [
-        "Implement",
-        "Database Configuration",
-        "Performance Tuning",
-        "Create / Modify Database",
-        "Delete / Drop Database",
-        "SQL Others",
-      ],
-      "Database Others": ["Database Others"],
-    },
-    Applications: {
-      SAP: [
-        "Installation",
-        "Configure",
-        "Application Decommissioning",
-        "SAP Others",
-      ],
-    },
-    Security: {
-      Antivirus: ["Implement", "Configure", "Decommission", "Antivirus Others"],
-      "Security Other": ["Security Others"],
-    },
-    "ID Management": {
-      "Create/Modify": [
-        "Domain ID",
-        "Windows Local ID",
-        "Email ID",
-        "SAP ID",
-        "Mysetu ID",
-        "ID - Others",
-      ],
-      "Delete/Disable": [
-        "Domain ID",
-        "Windows Local ID",
-        "Email ID",
-        "SAP ID",
-        "ID - Others",
-      ],
-    },
-    Telecom: {
-      Telephone: [
-        "New Telephone Request",
-        "Telephone Location Change",
-        "Telephone Special Number Allocation",
-        "Dedicated PRI number Allocation",
-      ],
-    },
+  // States for fetched data
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState({
+    categories: false,
+    subcategories: false,
+    items: false,
+  });
+   const headingColor = useColorModeValue("teal.600", "teal.200");
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading((prev) => ({ ...prev, categories: true }));
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await axios.get(
+          `http://${apiIp}:3000/tickets/drop/category?type=Service`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setCategories(response.data);
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: "Error fetching categories",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setLoading((prev) => ({ ...prev, categories: false }));
+      }
+    };
+
+    fetchCategories();
+  }, [toast]);
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (category) {
+        setLoading((prev) => ({ ...prev, subcategories: true }));
+        // Reset subcategory and item when category changes
+        setSubcategory("");
+        setItem("");
+        setItems([]); // Clear items list
+
+        const token = localStorage.getItem("token");
+
+        try {
+          const response = await axios.get(
+            `http://${apiIp}:3000/tickets/drop/sub-category?id=${category}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setSubcategories(response.data);
+        } catch (error) {
+          console.error(error);
+          toast({
+            title: "Error fetching subcategories",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        } finally {
+          setLoading((prev) => ({ ...prev, subcategories: false }));
+        }
+      } else {
+        // Clear dependent fields if category is cleared
+        setSubcategories([]);
+        setSubcategory("");
+        setItems([]);
+        setItem("");
+      }
+    };
+
+    fetchSubcategories();
+  }, [category, toast]);
+
+  // Fetch items when subcategory changes
+  useEffect(() => {
+    const fetchItems = async () => {
+      if (subcategory) {
+        setLoading((prev) => ({ ...prev, items: true }));
+        // Reset item when subcategory changes
+        setItem("");
+
+        const token = localStorage.getItem("token");
+
+        try {
+          const response = await axios.get(
+            `http://${apiIp}:3000/tickets/drop/item?id=${subcategory}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setItems(response.data);
+        } catch (error) {
+          console.error(error);
+          toast({
+            title: "Error fetching items",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        } finally {
+          setLoading((prev) => ({ ...prev, items: false }));
+        }
+      } else {
+        // Clear items if subcategory is cleared
+        setItems([]);
+        setItem("");
+      }
+    };
+
+    fetchItems();
+  }, [subcategory, toast]);
+
+  const handleCategoryChange = (e) => {
+    const selectedCategory = e.target.value;
+    setCategory(selectedCategory);
   };
 
-  const subcategories = category ? Object.keys(categories[category]) : [];
-  const items = subcategory ? categories[category][subcategory] : [];
+  const handleSubcategoryChange = (e) => {
+    const selectedSubcategory = e.target.value;
+    setSubcategory(selectedSubcategory);
+  };
 
   const handleUploadSuccess = ({ attachmentId, fileName }) => {
     setAttachmentId(attachmentId);
     setFileName(fileName);
-    toast.success("File uploaded successfully!!");
+    toast({
+      title: "File uploaded successfully!",
+      status: "success",
+      duration: 5000,
+      isClosable: true,
+    });
   };
 
   const handleClearAttachment = () => {
     setAttachmentId(null);
     setFileName(null);
   };
+
   const handleSubmit = () => {
-    if (!severity || !category || !subcategory || !item) {
-      toast.error("Please fill all required fields!"); // Toast notification
+    if (!severity || !category || !subcategory || !item || !description) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill all required fields!",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
       return;
     }
 
-    const formData = new FormData();
-    formData.append("type", "Service");
-    formData.append("description", description);
-    formData.append("severity", severity);
-    formData.append("status", "pending");
-    formData.append("category", category);
-    formData.append("subcategory", subcategory);
-    formData.append("item", item);
+    // Get label for category, subcategory, and item
+    const selectedCategory = categories.find((cat) => cat.id == category);
+    const selectedSubcategory = subcategories.find(
+      (subcat) => subcat.id == subcategory
+    );
+    const selectedItem = items.find((it) => it.id == item);
+
+    // Check if the labels are found
+    if (!selectedCategory || !selectedSubcategory || !selectedItem) {
+      toast({
+        title: "Error",
+        description:
+          "Unable to find the corresponding labels for the selected IDs.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
 
     const payload = {
       query: description,
       priority: severity,
-      subCategory: subcategory,
-      item: item,
-      category,
+      subCategory: selectedSubcategory.label,
+      item: selectedItem.label,
+      category: selectedCategory.label,
       type: "Service",
       attachmentId: attachmentId || undefined,
     };
@@ -234,290 +248,177 @@ const ServiceRequestForm = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then(() => {
-        toast.success("Ticket raised Successfully!!");
-
+      .then((response) => {
+        toast({
+          title: "Success",
+          description: `Ticket NO: ${response.data.ticketNo}`,
+          status: "success",
+          duration: 9000,
+          isClosable: true,
+        });
         navigate("/raise-a-ticket");
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        toast({
+          title: "Error",
+          description: "An error occurred while submitting the ticket",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      });
   };
 
   return (
-    <FormContainer>
-      <FormTitle>Service Request Form</FormTitle>
+    <Container maxW="container.md" py={8}>
+      <Card variant="outline" shadow="lg">
+        <CardHeader bg="teal.50" py={6}>
+          <Heading size="lg" textAlign="center" color={headingColor}>
+            Service Request Form
+          </Heading>
+        </CardHeader>
+        <CardBody>
+          <VStack spacing={6}>
+            <FormControl isRequired>
+              <FormLabel>Category </FormLabel>
+              <Skeleton isLoaded={!loading.categories}>
+                <Select
+                  value={category}
+                  onChange={handleCategoryChange}
+                  bg="gray.50"
+                  placeholder="Select a category"
+                >
+                  {categories?.map((cat) => (
+                    <option value={cat.id} key={cat.id}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </Select>
+              </Skeleton>
+            </FormControl>
 
-      <FormField required={true}>
-        <Label required={true}>Category <span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setSubcategory(""); // Reset subcategory when category changes
-            setItem(""); // Reset item when category changes
-          }}
-          required
-        >
-          <option value="">Select a category</option>
-          {Object.keys(categories).map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <FormField>
-        <Label>Subcategory <span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          disabled={category === ""}
-          value={subcategory}
-          onChange={(e) => {
-            setSubcategory(e.target.value);
-            setItem(""); // Reset item when subcategory changes
-          }}
-        >
-          <option value="">Select a subcategory</option>
-          {subcategories.map((subcat) => (
-            <option key={subcat} value={subcat}>
-              {subcat}
-            </option>
-          ))}
-        </Select>
-      </FormField>
+            <FormControl isRequired>
+              <FormLabel>Subcategory </FormLabel>
+              <Skeleton isLoaded={!loading.subcategories}>
+                <Select
+                  value={subcategory}
+                  onChange={handleSubcategoryChange}
+                  bg="gray.50"
+                  placeholder="Select a subcategory"
+                  isDisabled={!category}
+                >
+                  {subcategories?.map((subcat) => (
+                    <option value={subcat.id} key={subcat.id}>
+                      {subcat.label}
+                    </option>
+                  ))}
+                </Select>
+              </Skeleton>
+            </FormControl>
 
-      <FormField>
-        <Label>Item <span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          disabled={subcategory === ""}
-          value={item}
-          onChange={(e) => setItem(e.target.value)}
-        >
-          <option value="">Select an item</option>
-          {items.map((it) => (
-            <option key={it} value={it}>
-              {it}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <FormField>
-        {/* <Label>Severity <span style={{ color: 'red' }}>*</span></Label>
-        <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
-          <option value="">Select a severity</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-        </Select> */}
-      </FormField>
-      <FormField>
-        <Label>Description <span style={{ color: 'red' }}>*</span></Label>
-        <TextArea
-          placeholder="Enter request description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormField>
-      {attachmentId && (
-        <RamContainer>
-          <X color={"red"} onClick={handleClearAttachment} />
-        </RamContainer>
-      )}
-      {!attachmentId && (
-        <FormField>
-          <Label>Attach File (Optional)</Label>
-          <MediaUploader
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={(error) => {
-              toast.error("Error while uploading file");
-              console.error(error);
-            }}
-            maxSizeMB={10}
-            uploadUrl={`http://${apiIp}:3000/media/upload`}
-            acceptedFileTypes={[
-              "application/pdf",
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-            ]}
-            disabled={!!attachmentId}
-          />
-        </FormField>
-      )}
+            <FormControl isRequired>
+              <FormLabel>Item </FormLabel>
+              <Skeleton isLoaded={!loading.items}>
+                <Select
+                  value={item}
+                  onChange={(e) => setItem(e.target.value)}
+                  bg="gray.50"
+                  placeholder="Select an item"
+                  isDisabled={!subcategory}
+                >
+                  {items?.map((item) => (
+                    <option value={item.id} key={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </Select>
+              </Skeleton>
+            </FormControl>
 
-      {attachmentId && (
-        <MediaPreviewWrapper>
-          <MediaPreview mediaId={attachmentId} />
-        </MediaPreviewWrapper>
-      )}
-      <ButtonContainer>
-        <Button onClick={handleSubmit}>Submit</Button>
-        <ButtonCancel>Cancel</ButtonCancel>
-      </ButtonContainer>
+            <FormControl isRequired>
+              <FormLabel>Description </FormLabel>
+              <Textarea
+                placeholder="Enter request description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                minH="120px"
+              />
+            </FormControl>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={true}
-        closeOnClick
-      />
-    </FormContainer>
+            {!attachmentId ? (
+              <FormControl>
+                <FormLabel>Attach File (Optional)</FormLabel>
+                <MediaUploader
+                  onUploadSuccess={handleUploadSuccess}
+                  onUploadError={(error) => {
+                    toast({
+                      title: "Upload Error",
+                      description: "Error while uploading file",
+                      status: "error",
+                      duration: 5000,
+                      isClosable: true,
+                    });
+                    console.error(error);
+                  }}
+                  maxSizeMB={10}
+                  uploadUrl={`http://${apiIp}:3000/media/upload`}
+                  acceptedFileTypes={[
+                    "application/pdf",
+                    "image/jpeg",
+                    "image/png",
+                    "image/gif",
+                  ]}
+                  disabled={!!attachmentId}
+                />
+              </FormControl>
+            ) : (
+              <>
+                <Flex w="full" justify="flex-end" mb="-10px" zIndex="2">
+                  <IconButton
+                    aria-label="Remove attachment"
+                    icon={<X color="red" />}
+                    variant="ghost"
+                    onClick={handleClearAttachment}
+                  />
+                </Flex>
+                <Box w="full">
+                  <Divider my={4} />
+                  <Text mb={2} fontWeight="medium">
+                    Attachment
+                  </Text>
+                  <MediaPreview mediaId={attachmentId} />
+                </Box>
+              </>
+            )}
+
+            <HStack w="full" spacing={4} justify="space-between" mt={4}>
+              <Button
+                colorScheme="gray"
+                size="lg"
+                onClick={() => navigate("/raise-a-ticket")}
+                _hover={{ bg: "gray.500", color: "white" }}
+                transition="all 0.2s"
+                flex="1"
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="blue"
+                size="lg"
+                onClick={handleSubmit}
+                _hover={{ transform: "translateY(-2px)" }}
+                transition="all 0.2s"
+                flex="1"
+              >
+                Submit
+              </Button>
+            </HStack>
+          </VStack>
+        </CardBody>
+      </Card>
+    </Container>
   );
 };
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h2`
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-  color: #333;
-  text-align: center;
-`;
-
-const FormField = styled.div`
-  margin-bottom: 20px;
-  width: 100%;
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  color: #333;
-  display: block;
-  margin-bottom: 8px;
-`;
-
-const InputFile = styled.input`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &::file-selector-button {
-    background-color: #007bff;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-  }
-
-  &::file-selector-button:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const MediaPreviewWrapper = styled.div`
-  padding: 5px 0 10px;
-  width: 100%;
-`;
-
-const RamContainer = styled.div`
-  display: flex;
-  margin-bottom: -45px;
-  cursor: pointer;
-  z-index: 10;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%; // Ensure it takes full width
-  padding-right: 20px; // Optional: adjust padding to space out the cross icon
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  min-height: 120px;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: #999;
-    font-style: italic;
-    transition: color 0.3s ease;
-  }
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &:focus::placeholder {
-    color: #007bff;
-  }
-`;
-const Select = styled.select`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  transition: border 0.3s ease, background-color 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  option {
-    color: #555;
-  }
-
-  option:first-child {
-    color: #999; // Placeholder option color (first item)
-  }
-
-  &:focus option:first-child {
-    color: #007bff; // Change placeholder option color when focused
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const ButtonCancel = styled(Button)`
-  background-color: #ccc;
-  &:hover {
-    background-color: #888;
-  }
-`;
 
 export default ServiceRequestForm;

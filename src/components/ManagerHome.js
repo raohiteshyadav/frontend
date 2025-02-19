@@ -25,11 +25,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../providers/authProvider";
 
-const Approval = () => {
+const ManagerHome = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const pageSize=5;
+  const pageSize = 5;
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(false);
   const user = useAuth();
@@ -61,7 +61,7 @@ const Approval = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [currentPage]);
 
   return (
     <Box
@@ -191,17 +191,24 @@ const Approval = () => {
               </Thead>
               <Tbody>
                 {lists.map((request) => (
-                  <Tr 
-                  key={request.id} 
-                  onClick={()=> handleRowClick(request.id)}
-                  style={{cursor:"pointer"}}
-                  _hover={{ bg: "gray.50" }}>
+                  <Tr
+                    key={request.id}
+                    onClick={() => handleRowClick(request.id)}
+                    style={{ cursor: "pointer" }}
+                    _hover={{ bg: "gray.50" }}
+                  >
                     <Td>{request.sequenceNo}</Td>
                     <Td>{request.query}</Td>
-                    <Td color={request.resolvedAt?"green.500":"red.500"}>
+                    <Td color={request.resolvedAt ? "green.500" : "red.500"}>
                       {request.resolvedAt ? "Closed" : "Open"}
                     </Td>
-                    <Td>{request.headRejectedAt?'Rejected':request.headApprovedAt?"Approved":""}</Td>
+                    <Td>
+                      {request.headRejectedAt
+                        ? "Rejected"
+                        : request.headApprovedAt
+                        ? "Approved"
+                        : ""}
+                    </Td>
                     <Td>{request.type}</Td>
                     <Td>{request.createdAt}</Td>
                     <Td>{request.createdBy}</Td>
@@ -246,4 +253,4 @@ const Approval = () => {
   );
 };
 
-export default Approval;
+export default ManagerHome;

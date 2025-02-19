@@ -1,18 +1,32 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import styled from "styled-components";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import MediaPreview from "./mediaPreview";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Box,
+  Container,
+  Heading,
+  FormControl,
+  FormLabel,
+  Text,
+  Textarea,
+  Button,
+  VStack,
+  HStack,
+  Tooltip,
+  Badge,
+  CardHeader,
+  Card
+} from "@chakra-ui/react";
 
 const apiIp = process.env.REACT_APP_API_IP;
 
 const PreviewHead = () => {
-  const { id } = useParams(); // Get the ID from the URL
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  // Form state
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
@@ -20,12 +34,10 @@ const PreviewHead = () => {
   const [item, setItem] = useState("");
   const [attachmentId, setAttachmentId] = useState(null);
   const [fileName, setFileName] = useState(null);
-  const [approved, setApproved] = useState("");
-
-  const [isLoading, setIsLoading] = useState(true);
+  const [approved, setApproved] = useState(null);
+  const [rejected, setRejected] = useState(null);
 
   useEffect(() => {
-    // Fetch pre-filled form data using the ID from the URL
     if (id) {
       const token = localStorage.getItem("token");
       axios
@@ -44,6 +56,7 @@ const PreviewHead = () => {
           setAttachmentId(data.attachmentId);
           setFileName(data.attachmentName);
           setApproved(data.approvedByHeadAt);
+          setRejected(data.rejectedByHeadAt);
         })
         .catch((error) => {
           console.error("Error fetching prefilled data:", error);
@@ -66,64 +79,118 @@ const PreviewHead = () => {
         }
       )
       .then(() => {
-        toast.success("Ticket Approved Successfully!!");
+        toast.success("Ticket Approved/Rejected Successfully!!");
+        setApproved(action === "approved" ? "approved" : "rejected");
         navigate("/approval");
       })
       .catch((error) => console.error(error));
   };
 
+  const ReadOnlyField = ({ label, value }) => (
+    <FormControl mb={5}>
+      <FormLabel>{label}</FormLabel>
+      <Box
+        p={2}
+        bg="gray.100"
+        borderRadius="md"
+        border="1px"
+        borderColor="gray.200"
+      >
+        {value}
+      </Box>
+    </FormControl>
+  );
+
   return (
-    <FormContainer>
-      <FormTitle>Service Request Form</FormTitle>
+    <Container  maxW="container.md" py={8}>
+      <Card variant="outline" shadow="lg" p={2}>
+        <VStack spacing={4} align="stretch">
+          <CardHeader borderBottom={"1px solid gray"}>
+            <Heading size="lg" textAlign="center" color="blue.600">
+              Service Request Details
+            </Heading>
+          </CardHeader>
 
-      {/* Displaying static values for category, subcategory, item, and severity */}
-      <FormField>
-        <Label>Category</Label>
-        <ReadOnlyInput>{category}</ReadOnlyInput>
-      </FormField>
+          <ReadOnlyField label="Category" value={category} />
+          <ReadOnlyField label="Subcategory" value={subcategory} />
+          <ReadOnlyField label="Item" value={item} />
 
-      <FormField>
-        <Label>Subcategory</Label>
-        <ReadOnlyInput>{subcategory}</ReadOnlyInput>
-      </FormField>
+          <FormControl mb={5}>
+            <FormLabel>
+              Description{" "}
+              <Text as="span" color="red.500">
+                *
+              </Text>
+            </FormLabel>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              minH="120px"
+              resize="vertical"
+            />
+          </FormControl>
 
-      <FormField>
-        <Label>Item</Label>
-        <ReadOnlyInput>{item}</ReadOnlyInput>
-      </FormField>
+          {attachmentId && (
+            <Box py={2}>
+              <MediaPreview mediaId={attachmentId} />
+            </Box>
+          )}
 
-      <FormField>
-        <Label>Severity</Label>
-        <ReadOnlyInput>{severity}</ReadOnlyInput>
-      </FormField>
+          <HStack spacing={4} justify="space-between" mt={4}>
+            <Tooltip
+              label={
+                approved
+                  ? `Approved on: ${new Date(approved).toLocaleDateString(
+                      "en-GB",
+                      { day: "numeric", month: "short", year: "numeric" }
+                    )} ${new Date(approved).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "numeric",
+                      hour12: true,
+                    })}`
+                  : "Approve ticket"
+              }
+              hasArrow
+              placement="top"
+            >
+              <Button
+                colorScheme="blue"
+                isDisabled={approved}
+                onClick={() => handleSubmit("approved")}
+                width="full"
+              >
+                Approve
+              </Button>
+            </Tooltip>
 
-      {/* Description field */}
-      <FormField>
-        <Label>
-          Description <span style={{ color: "red" }}>*</span>
-        </Label>
-        <TextArea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormField>
-
-      {/* Media preview */}
-      {attachmentId && (
-        <MediaPreviewWrapper>
-          <MediaPreview mediaId={attachmentId} />
-        </MediaPreviewWrapper>
-      )}
-
-      {/* Submit and cancel buttons */}
-      <ButtonContainer>
-        <Button  onClick={() => handleSubmit("approved")}>
-          Approve
-        </Button>
-        <Button disabled={approved} onClick={() => handleSubmit("rejected")}>
-          Reject
-        </Button>
-      </ButtonContainer>
+            <Tooltip
+              label={
+                rejected
+                  ? `Rejected on: ${new Date(rejected).toLocaleDateString(
+                      "en-GB",
+                      { day: "numeric", month: "short", year: "numeric" }
+                    )} ${new Date(rejected).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "numeric",
+                      hour12: true,
+                    })}`
+                  : "Reject ticket"
+              }
+              hasArrow
+              placement="top"
+            >
+              <Button
+                colorScheme="red"
+                isDisabled={rejected}
+                onClick={() => handleSubmit("rejected")}
+                width="full"
+              >
+                Reject
+              </Button>
+            </Tooltip>
+          </HStack>
+        </VStack>
+      </Card>
 
       <ToastContainer
         position="top-right"
@@ -131,113 +198,8 @@ const PreviewHead = () => {
         hideProgressBar={true}
         closeOnClick
       />
-    </FormContainer>
+    </Container>
   );
 };
-
-// Styled components
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const MediaPreviewWrapper = styled.div`
-  padding: 5px 0 10px;
-  width: 100%;
-`;
-
-const FormTitle = styled.h2`
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-  color: #333;
-  text-align: center;
-`;
-
-const FormField = styled.div`
-  margin-bottom: 20px;
-  width: 100%;
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  color: #333;
-  display: block;
-  margin-bottom: 8px;
-`;
-
-const ReadOnlyInput = styled.div`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f5f5f5;
-  color: #333;
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  min-height: 120px;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: #999;
-    font-style: italic;
-    transition: color 0.3s ease;
-  }
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &:focus::placeholder {
-    color: #007bff;
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-top: 20px;
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:disabled {
-    color: rgb(27, 199, 70);
-    background-color: #d6d6d6;
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
 
 export default PreviewHead;

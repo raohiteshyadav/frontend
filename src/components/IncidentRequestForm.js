@@ -1,16 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { X } from "lucide-react";
 import MediaUploader from "./mediaUploader";
 import MediaPreview from "./mediaPreview";
-import { Box, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-const apiIp = process.env.REACT_APP_API_IP;
-const IncidentRequestForm = () => {
+import {
+  Box,
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  Heading,
+  FormControl,
+  FormLabel,
+  Select,
+  Textarea,
+  Button,
+  Stack,
+  Flex,
+  Text,
+  IconButton,
+  Divider,
+  useColorModeValue,
+  useToast,
+  HStack,
+} from "@chakra-ui/react";
 
+const apiIp = process.env.REACT_APP_API_IP;
+
+const IncidentRequestForm = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState("");
   const [category, setCategory] = useState("");
@@ -19,182 +41,142 @@ const IncidentRequestForm = () => {
   const [attachmentId, setAttachmentId] = useState(null);
   const [fileName, setFileName] = useState(null);
 
-  const categories = {
-    Server: {
-      Windows: [
-        "Login Issue",
-        "System Error",
-        "Hardware Issue",
-        "Software Issue",
-        "Disk / Partition Issue",
-        "Operating System",
-        "Cluster",
-        "Service & Process",
-        "Patch & Firmware",
-        "AD/ADFS/DNS",
-        "Virtualization",
-        "Physical Host",
-        "Windows Others",
-      ],
-      Linux: [
-        "Login Issue",
-        "System Error",
-        "Hardware Issue",
-        "Software Issue",
-        "Disk / Partition Issue",
-        "Operating System",
-        "Service & Process",
-        "Patch & Firmware",
-        "AD/ADFS/DNS",
-        "Virtualization",
-        "Physical Host",
-        "Linux Others",
-      ],
-    },
-    Network: {
-      Switch: [
-        "Login Issue",
-        "Port Issue",
-        "DHCP",
-        "Policy/Configuration Issue",
-        "VLAN",
-        "Patch & Firmware",
-        "System Error",
-        "Hardware Issue",
-        "Switch Others",
-      ],
-      Firewall: [
-        "Login Issue",
-        "Policy/Configuration Issue",
-        "Patch & Firmware",
-        "VPN",
-        "System Error",
-        "Hardware Issue",
-        "Firewall Others",
-      ],
-      "Load Balancer": [
-        "Login Issue",
-        "Policy/Configuration Issue",
-        "Patch & Firmware",
-        "System Error",
-        "Hardware Issue",
-        "Load Balancer Others",
-      ],
-      Internet: ["Link Down", "Packet Drops", "Internet Others"],
-    },
-    Storage: {
-      "NAS Storage": [
-        "Login Issue",
-        "System Error",
-        "Storage Full",
-        "LUN Issue",
-        "Shared Storage",
-        "Patch & Firmware",
-        "Hardware Issue",
-        "NAS Others",
-      ],
-    },
-    Backup: {
-      Jobs: ["Job Fail", "Start / Restart / Stop Job", "Job Others"],
-      "Backup Application": [
-        "System Error",
-        "Backup Master",
-        "Backup Client",
-        "Backup Application Others",
-      ],
-      "Tape & Library": [
-        "Tape Library",
-        "LTO Tape",
-        "Hardware Issue",
-        "Tape & Library Others",
-      ],
-      "Backup Others": ["Backup Others"],
-    },
-    Helpdesk: {
-      Desktop: [
-        "Software Issue",
-        "Hardware Issue",
-        "Operating System",
-        "Network & WiFi",
-        "Antivirus",
-        "VPN",
-        "Desktop Others",
-      ],
-      Laptop: [
-        "Software Issue",
-        "Hardware Issue",
-        "Operating System",
-        "Network & WiFi",
-        "Antivirus",
-        "VPN",
-        "Laptop Others",
-      ],
-      "Other Devices": [
-        "Printer Issue",
-        "Scanner Issue",
-        "Display Issue",
-        "Conference Room Issue",
-        "Projector & Speaker Issue",
-        "Devices Others",
-      ],
-    },
-    Database: {
-      Oracle: [
-        "Login Issue",
-        "System Error",
-        "Performance",
-        "Cluster & Replication",
-        "Storage, Partition & Mount Point",
-        "Backup & Restore",
-        "Table Space & DB Lock",
-        "Session Process",
-        "Oracle Others",
-      ],
-      SQL: [
-        "Login Issue",
-        "System Error",
-        "Performance",
-        "Cluster & Replication",
-        "Storage, Partition & Mount Point",
-        "Backup & Restore",
-        "Table Space & DB Lock",
-        "Session Process",
-        "SQL Others",
-      ],
-      OtherDB: [
-        "Login Issue",
-        "System Error",
-        "Performance",
-        "Backup & Restore",
-        "Others DB",
-      ],
-    },
-    SAP: {
-      MM: ["Technical", "Functional", "Administration"],
-      FICO: ["Technical", "Functional", "Administration"],
-      SD: ["Technical", "Functional", "Administration"],
-      PM: ["Technical", "Functional", "Administration"],
-      Security: ["Password Reset", "Role Addition", "Role Removal"],
-      QM: ["Technical", "Functional", "Administration"],
-      PP: ["Technical", "Functional", "Administration"],
-      PS: ["Technical", "Functional", "Administration"],
-    },
-    "Application Others": {
-      "Application Others": ["Application Others"],
-    },
-    Security: {
-      AntiVirus: ["Signature Update", "Alert", "Antivirus Others"],
-      "Security Others": ["Security Others"],
-    },
-    CCTV: {
-      CCTV: ["Camera issue", "Clarity issue"],
-    },
-    Telecom: {
-      Telephone: ["Telephone Issue", "Incoming issue", "Outgoing issue"],
-    },
+  // States for fetched data
+  const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState({
+    categories: false,
+    subcategories: false,
+    items: false,
+  });
+
+  // Colors
+  const cardBg = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const headingColor = useColorModeValue("teal.600", "teal.200");
+  const requiredColor = "red.500";
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading((prev) => ({ ...prev, categories: true }));
+      const token = localStorage.getItem("token");
+
+      try {
+        const response = await axios.get(
+          `http://${apiIp}:3000/tickets/drop/category?type=Incident`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setCategories(response.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error fetching categories");
+      } finally {
+        setLoading((prev) => ({ ...prev, categories: false }));
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (category) {
+        setLoading((prev) => ({ ...prev, subcategories: true }));
+        // Reset subcategory and item when category changes
+        setSubcategory("");
+        setItem("");
+        setItems([]); // Clear items list
+
+        const token = localStorage.getItem("token");
+
+        try {
+          const response = await axios.get(
+            `http://${apiIp}:3000/tickets/drop/sub-category?id=${category}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setSubcategories(response.data);
+        } catch (error) {
+          console.error(error);
+          toast.error("Error fetching subcategories");
+        } finally {
+          setLoading((prev) => ({ ...prev, subcategories: false }));
+        }
+      } else {
+        // Clear dependent fields if category is cleared
+        setSubcategories([]);
+        setSubcategory("");
+        setItems([]);
+        setItem("");
+      }
+    };
+
+    fetchSubcategories();
+  }, [category]);
+
+  // Fetch items when subcategory changes
+  useEffect(() => {
+    const fetchItems = async () => {
+      if (subcategory) {
+        setLoading((prev) => ({ ...prev, items: true }));
+        // Reset item when subcategory changes
+        setItem("");
+
+        const token = localStorage.getItem("token");
+
+        try {
+          const response = await axios.get(
+            `http://${apiIp}:3000/tickets/drop/item?id=${subcategory}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          setItems(response.data);
+        } catch (error) {
+          console.error(error);
+          toast.error("Error fetching items");
+        } finally {
+          setLoading((prev) => ({ ...prev, items: false }));
+        }
+      } else {
+        // Clear items if subcategory is cleared
+        setItems([]);
+        setItem("");
+      }
+    };
+
+    fetchItems();
+  }, [subcategory]);
+
+  const handleCategoryChange = (e) => {
+    const selectedCategory = e.target.value;
+    setCategory(selectedCategory);
+    // Reset dependent fields
+    setSubcategory("");
+    setItem("");
+    setSubcategories([]);
+    setItems([]);
   };
-  const subcategories = category ? Object.keys(categories[category]) : [];
-  const items = subcategory ? categories[category][subcategory] : [];
+
+  const handleSubcategoryChange = (e) => {
+    const selectedSubcategory = e.target.value;
+    setSubcategory(selectedSubcategory);
+    // Reset dependent field
+    setItem("");
+    setItems([]);
+  };
 
   const handleUploadSuccess = ({ attachmentId, fileName }) => {
     setAttachmentId(attachmentId);
@@ -209,27 +191,35 @@ const IncidentRequestForm = () => {
 
   const handleSubmit = () => {
     if (!severity || !category || !subcategory || !item) {
-      toast.error("Please fill all required fields!"); 
+      toast.error("Please fill all required fields!");
       return;
     }
-    const formData = new FormData();
-    formData.append("type", "Incident");
-    formData.append("description", description);
-    formData.append("severity", severity);
-    formData.append("status", "pending");
-    formData.append("category", category);
-    formData.append("subcategory", subcategory);
-    formData.append("item", item);
+
+    // Get label for category, subcategory, and item
+    const selectedCategory = categories.find((cat) => cat.id == category);
+    const selectedSubcategory = subcategories.find(
+      (subcat) => subcat.id == subcategory
+    );
+    const selectedItem = items.find((it) => it.id == item);
+
+    // Check if the labels are found
+    if (!selectedCategory || !selectedSubcategory || !selectedItem) {
+      toast.error(
+        "Error: Unable to find the corresponding labels for the selected IDs."
+      );
+      return;
+    }
 
     const payload = {
       query: description,
       priority: severity,
-      subCategory: subcategory,
-      item: item,
-      category,
+      subCategory: selectedSubcategory.label,
+      item: selectedItem.label,
+      category: selectedCategory.label,
       type: "Incident",
-      attachmentId: attachmentId  || undefined,
+      attachmentId: attachmentId || undefined,
     };
+
     const token = localStorage.getItem("token");
     axios
       .post(`http://${apiIp}:3000/tickets/create`, payload, {
@@ -238,123 +228,199 @@ const IncidentRequestForm = () => {
           Authorization: `Bearer ${token}`,
         },
       })
-      .then(() => {
-        toast.success("Ticket raised Successfully!!");
-        
+      .then((response) => {
+        toast({
+          title: "Success",
+          description: `Ticket NO: ${response.data.ticketNo}`,
+          status: "success",
+          duration: 9000,
+          isClosable: true,
+        });
         navigate("/raise-a-ticket");
       })
-      .catch((error) => console.error(error));
+      .catch((error) => {
+        console.error(error);
+        toast.error("An error occurred while submitting the ticket");
+      });
   };
 
   return (
-    <FormContainer>
-      <FormTitle>Incident Request Form</FormTitle>
+    <Box py={8} px={4} maxW="650px" mx="auto">
+      <Card
+        bg={cardBg}
+        boxShadow="lg"
+        borderRadius="xl"
+        borderWidth="1px"
+        borderColor={borderColor}
+        overflow="hidden"
+      >
+        <CardHeader bg="teal.50" py={6}>
+          <Heading size="lg" textAlign="center" color={headingColor}>
+            Incident Request Form
+          </Heading>
+        </CardHeader>
 
-      <FormField>
-        <Label>Category<span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            setSubcategory(""); // Reset subcategory when category changes
-            setItem(""); // Reset item when category changes
-          }}
-        >
-          <option value="">Select a category</option>
-          {Object.keys(categories).map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <FormField>
-        <Label>Subcategory <span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          disabled={category === ""}
-          value={subcategory}
-          onChange={(e) => {
-            setSubcategory(e.target.value);
-            setItem(""); // Reset item when subcategory changes
-          }}
-        >
-          <option value="">Select a subcategory</option>
-          {subcategories.map((subcat) => (
-            <option key={subcat} value={subcat}>
-              {subcat}
-            </option>
-          ))}
-        </Select>
-      </FormField>
+        <CardBody pt={6} pb={2}>
+          <Stack spacing={6}>
+            <FormControl isRequired>
+              <FormLabel fontWeight="medium">Category</FormLabel>
+              <Select
+                placeholder="Select a category"
+                value={category}
+                onChange={handleCategoryChange}
+                isDisabled={loading.categories}
+                focusBorderColor="teal.400"
+                size="md"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
 
-      <FormField>
-        <Label>Item <span style={{ color: 'red' }}>*</span></Label>
-        <Select
-          disabled={subcategory === ""}
-          value={item}
-          onChange={(e) => setItem(e.target.value)}
-        >
-          <option value="">Select an item</option>
-          {items.map((it) => (
-            <option key={it} value={it}>
-              {it}
-            </option>
-          ))}
-        </Select>
-      </FormField>
-      <FormField>
-        <Label>Severity <span style={{ color: 'red' }}>*</span></Label>
-        <Select value={severity} onChange={(e) => setSeverity(e.target.value)}>
-          <option value="">Select a severity</option>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-        </Select>
-      </FormField>
-      <FormField>
-        <Label>Description<span style={{ color: 'red' }}>*</span></Label>
-        <TextArea
-          placeholder="Enter request description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </FormField>
-      {attachmentId && (
-        <RamContainer>
-          <X color={"red"} onClick={handleClearAttachment} />
-        </RamContainer>
-      )}
-      {!attachmentId && (
-        <FormField>
-          <Label>Attach File (Optional)</Label>
-          <MediaUploader
-            onUploadSuccess={handleUploadSuccess}
-            onUploadError={(error) => {
-              toast.error("Error while uploading file");
-              console.error(error);
-            }}
-            maxSizeMB={10}
-            uploadUrl={ `http://${apiIp}:3000/media/upload`}
-            acceptedFileTypes={[
-              "application/pdf",
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-            ]}
-            disabled={!!attachmentId}
-          />
-        </FormField>
-      )}
+            <FormControl isRequired>
+              <FormLabel fontWeight="medium">Subcategory</FormLabel>
+              <Select
+                placeholder="Select a subcategory"
+                value={subcategory}
+                onChange={handleSubcategoryChange}
+                isDisabled={!category || loading.subcategories}
+                focusBorderColor="teal.400"
+                size="md"
+              >
+                {subcategories.map((subcat) => (
+                  <option key={subcat.id} value={subcat.id}>
+                    {subcat.label}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
 
-      {attachmentId && (
-        <MediaPreviewWrapper>
-          <MediaPreview mediaId={attachmentId} />
-        </MediaPreviewWrapper>
-      )}
-      <ButtonContainer>
-        <Button onClick={handleSubmit}>Submit</Button>
-        <ButtonCancel>Cancel</ButtonCancel>
-      </ButtonContainer>
+            <FormControl isRequired>
+              <FormLabel fontWeight="medium">Item</FormLabel>
+              <Select
+                placeholder="Select an item"
+                value={item}
+                onChange={(e) => setItem(e.target.value)}
+                isDisabled={!subcategory || loading.items}
+                focusBorderColor="teal.400"
+                size="md"
+              >
+                {items.map((it) => (
+                  <option key={it.id} value={it.id}>
+                    {it.label}
+                  </option>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontWeight="medium">Severity</FormLabel>
+              <Select
+                placeholder="Select a severity"
+                value={severity}
+                onChange={(e) => setSeverity(e.target.value)}
+                focusBorderColor="teal.400"
+                size="md"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </Select>
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel fontWeight="medium">Description</FormLabel>
+              <Textarea
+                placeholder="Please describe the incident in detail..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                minH="120px"
+                focusBorderColor="teal.400"
+                size="md"
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel fontWeight="medium">Attach File (Optional)</FormLabel>
+
+              {attachmentId ? (
+                <Box position="relative" mb={4}>
+                  <Flex justifyContent="flex-end" mb={2}>
+                    <IconButton
+                      icon={<X />}
+                      size="sm"
+                      colorScheme="red"
+                      variant="ghost"
+                      aria-label="Remove attachment"
+                      onClick={handleClearAttachment}
+                    />
+                  </Flex>
+                  <Box
+                    border="1px"
+                    borderColor={borderColor}
+                    borderRadius="md"
+                    p={3}
+                  >
+                    <MediaPreview mediaId={attachmentId} />
+                  </Box>
+                </Box>
+              ) : (
+                <Box
+                  border="1px dashed"
+                  borderColor={borderColor}
+                  borderRadius="md"
+                  p={4}
+                >
+                  <MediaUploader
+                    onUploadSuccess={handleUploadSuccess}
+                    onUploadError={(error) => {
+                      toast.error("Error while uploading file");
+                      console.error(error);
+                    }}
+                    maxSizeMB={10}
+                    uploadUrl={`http://${apiIp}:3000/media/upload`}
+                    acceptedFileTypes={[
+                      "application/pdf",
+                      "image/jpeg",
+                      "image/png",
+                      "image/gif",
+                    ]}
+                    disabled={!!attachmentId}
+                  />
+                </Box>
+              )}
+            </FormControl>
+          </Stack>
+        </CardBody>
+
+        <Divider />
+
+        <HStack w="full" spacing={4} justify="space-between" mt={4}>
+          <Button
+            colorScheme="gray"
+            size="lg"
+            onClick={() => navigate("/raise-a-ticket")}
+            _hover={{ bg: "gray.500", color: "white" }}
+            transition="all 0.2s"
+            flex="1"
+          >
+            Cancel
+          </Button>
+          <Button
+            colorScheme="blue"
+            size="lg"
+            onClick={handleSubmit}
+            _hover={{ transform: "translateY(-2px)" }}
+            transition="all 0.2s"
+            flex="1"
+          >
+            Submit
+          </Button>
+        </HStack>
+      </Card>
 
       <ToastContainer
         position="top-right"
@@ -362,165 +428,8 @@ const IncidentRequestForm = () => {
         hideProgressBar={true}
         closeOnClick
       />
-    </FormContainer>
+    </Box>
   );
 };
-
-const FormContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const FormTitle = styled.h2`
-  margin-bottom: 20px;
-  font-size: 1.8rem;
-  color: #333;
-  text-align: center;
-`;
-
-const FormField = styled.div`
-  margin-bottom: 20px;
-  width: 100%;
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  color: #333;
-  display: block;
-  margin-bottom: 8px;
-`;
-
-const InputFile = styled.input`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &::file-selector-button {
-    background-color: #007bff;
-    color: white;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-  }
-
-  &::file-selector-button:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const MediaPreviewWrapper = styled.div`
-  padding: 5px 0 10px;
-  width: 100%;
-`;
-
-const RamContainer = styled.div`
-  display: flex;
-  margin-bottom: -45px;
-  cursor: pointer;
-  z-index: 10;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%; // Ensure it takes full width
-  padding-right: 20px; // Optional: adjust padding to space out the cross icon
-`;
-
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  resize: vertical;
-  min-height: 120px;
-  transition: border 0.3s ease;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: #999;
-    font-style: italic;
-    transition: color 0.3s ease;
-  }
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  &:focus::placeholder {
-    color: #007bff;
-  }
-`;
-const Select = styled.select`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  outline: none;
-  transition: border 0.3s ease, background-color 0.3s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: #007bff;
-  }
-
-  option {
-    color: #555;
-  }
-
-  option:first-child {
-    color: #999; // Placeholder option color (first item)
-  }
-
-  &:focus option:first-child {
-    color: #007bff; // Change placeholder option color when focused
-  }
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
-
-const ButtonCancel = styled(Button)`
-  background-color: #ccc;
-  &:hover {
-    background-color: #888;
-  }
-`;
 
 export default IncidentRequestForm;
